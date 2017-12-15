@@ -1,0 +1,26 @@
+apiVersion: "kubeflow.caicloud.io/v1alpha1"
+kind: "TFJob"
+metadata:
+  name: "serving-job"
+spec:
+  type: Serving
+  tfReplicaSpec:
+  - replicas: 2
+    template:
+      spec:
+        containers:
+        - name: serving
+          image: cargo.caicloud.io/clever-base/tf_serving:1.4.0
+          ports:
+          - containerPort: <container-port>
+          command:
+          - "/workdir/tensorflow/launch_serving.sh"
+          volumeMounts:
+          - name: workdir
+            mountPath: /workdir            
+        volumes:
+        - name: workdir
+          glusterfs:
+            endpoints: <gluster-cluster>
+            path: <gluster_vol_subpath>
+        restartPolicy: OnFailure

@@ -1,0 +1,26 @@
+apiVersion: "kubeflow.caicloud.io/v1alpha1"
+kind: "TFJob"
+metadata:
+  name: "tensorboard-job"
+spec:
+  type: TensorBoard
+  tfReplicaSpec:
+  - replicas: 2
+    template:
+      spec:
+        containers:
+        - name: tensorboard
+          image: cargo.caicloud.io/clever-base/tensorflow:1.4.0
+          ports:
+          - containerPort: <container-port>
+          command:
+          - "/workdir/tensorflow/launch_tensorboard.sh"
+          volumeMounts:
+          - name: workdir
+            mountPath: /workdir            
+        volumes:
+        - name: workdir
+          glusterfs:
+            endpoints: <gluster-cluster>
+            path: <gluster_vol_subpath>
+        restartPolicy: OnFailure
