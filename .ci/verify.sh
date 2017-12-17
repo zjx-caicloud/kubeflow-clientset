@@ -14,31 +14,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# The script is dangerous, plz do NOT run it locally.
+
 set -o errexit
 set -o nounset
 set -o pipefail
 
 SCRIPT_ROOT=$(dirname "${BASH_SOURCE}")/..
 
-DIFFROOT="${SCRIPT_ROOT}/pkg"
-TMP_DIFFROOT="${SCRIPT_ROOT}/_tmp/pkg"
-_tmp="${SCRIPT_ROOT}/_tmp"
+DIFFROOT="${SCRIPT_ROOT}"
+BACKUP_DIFFROOT=$(mktemp -d /tmp/backup.kubeflow.clientset.diff.XXXXXXXXXX)
 
 cleanup() {
-  rm -rf "${_tmp}"
+  [ -d "${BACKUP_DIFFROOT}" ] && rm -rf ${BACKUP_DIFFROOT}
 }
 trap "cleanup" EXIT SIGINT
 
-cleanup
-
-mkdir -p "${TMP_DIFFROOT}"
-cp -a "${DIFFROOT}"/* "${TMP_DIFFROOT}"
+cp -a "${DIFFROOT}" "${BACKUP_DIFFROOT}"
 
 "${SCRIPT_ROOT}/hack/update-codegen.sh"
 echo "diffing ${DIFFROOT} against freshly generated codegen"
 ret=0
-diff -Naupr "${DIFFROOT}" "${TMP_DIFFROOT}" || ret=$?
-cp -a "${TMP_DIFFROOT}"/* "${DIFFROOT}"
+
+diff -Naupr "${DIFFROOT}" "${BACKUP_DIFFROOT}" || ret=$?
+
 if [[ $ret -eq 0 ]]
 then
   echo "${DIFFROOT} up to date."
